@@ -1,0 +1,125 @@
+import csv
+from datetime import datetime
+
+class Transaction:
+    def __init__(self, category, amount, date, description):
+        self.category = category
+        self.amount = amount
+        self.date = date
+        self.description = description
+
+def input_amount(prompt):
+    while True:
+        try:
+            amount = float(input(prompt))
+            if amount >= 0:
+                return amount
+            else:
+                print("Amount must be positive.")
+        except ValueError:
+            print("Invalid input. Please enter a valid amount.")
+
+def input_date(prompt):
+    while True:
+        try:
+            date_str = input(prompt)
+            date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            return date
+        except ValueError:
+            print("Invalid date format. Please use yyyy-mm-dd.")
+
+def add_transaction(transactions, transaction_type):
+    category = input("Enter category: ")
+    amount = input_amount(f"Enter {transaction_type} amount: ")
+    date = input_date(f"Enter {transaction_type} date (yyyy-mm-dd): ")
+    description = input(f"Enter {transaction_type} description: ")
+
+    transactions.append(Transaction(category, amount, date, description))
+    print(f"{transaction_type} added successfully.")
+
+def calculate_budget(income, expenses):
+    total_income = sum(transaction.amount for transaction in income)
+    total_expenses = sum(transaction.amount for transaction in expenses)
+    remaining_budget = total_income - total_expenses
+
+    print(f"Total Income: ${total_income}")
+    print(f"Total Expenses: ${total_expenses}")
+    print(f"Remaining Budget: ${remaining_budget}")
+
+def analyze_expenses(expenses):
+    categories = set(transaction.category for transaction in expenses)
+    
+    print("Expense Categories:")
+    for category in categories:
+        total_category_expenses = sum(transaction.amount for transaction in expenses if transaction.category == category)
+        print(f"{category}: ${total_category_expenses}")
+
+def save_transactions(transactions, filename):
+    with open(filename, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Category", "Amount", "Date", "Description"])
+        for transaction in transactions:
+            writer.writerow([transaction.category, transaction.amount, transaction.date, transaction.description])
+    print("Transactions saved to file.")
+
+def load_transactions(filename):
+    income = []
+    expenses = []
+    try:
+        with open(filename, 'r') as file:
+            reader = csv.reader(file)
+            next(reader)  # Skip the header row
+            for row in reader:
+                category, amount, date, description = row
+                amount = float(amount)
+                if amount >= 0:
+                    income.append(Transaction(category, amount, date, description))
+                else:
+                    expenses.append(Transaction(category, -amount, date, description))
+        print("Transactions loaded from file.")
+    except FileNotFoundError:
+        print("File not found. No transactions loaded.")
+    
+    return income, expenses
+
+def menu():
+    return {
+        "1": lambda: add_transaction(income, "Income"),
+        "2": lambda: add_transaction(expenses, "Expense"),
+        "3": lambda: calculate_budget(income, expenses),
+        "4": lambda: analyze_expenses(expenses),
+        "5": lambda: save_transactions(income + expenses, filename),
+        "6": lambda: load_transactions(filename),
+        "7": exit_program,
+    }
+
+def exit_program():
+    print("Exiting the budget tracker. Goodbye!")
+
+if __name__ == "__main__":
+    income = []
+    expenses = []
+    filename = "transactions.csv"
+
+    # Load transactions from a file if it exists
+    income, expenses = load_transactions(filename)
+
+    while True:
+        # Display menu options
+        print("Menu:")
+        print("1. Add Income")
+        print("2. Add Expense")
+        print("3. Calculate Budget")
+        print("4. Analyze Expenses")
+        print("5. Save Transactions")
+        print("6. Load Transactions")
+        print("7. Exit")
+
+        choice = input("Enter your choice: ")
+
+        menu_options = menu()
+
+        if choice in menu_options:
+            menu_options[choice]()
+        else:
+            print("Invalid choice. Please try again.")
